@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "990182619105",
+    "project_id": "mininotes-b758a",
+    "storage_bucket": "mininotes-b758a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:990182619105:android:df1b4ee5f9078d457f84a0",
+        "android_client_info": {
+          "package_name": "com.example.mininotes"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "990182619105-psma7ad8d88530og2k874us6l3d1hrfk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mininotes",
+            "certificate_hash": "516eb11e651c79f407e1cbfb6a504a6796cbe03a"
+          }
+        },
+        {
+          "client_id": "990182619105-h4rudgehgmallufcisor7hpi5kpk5tcq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYpwKX85h-rHdR25fcM3bt_Atca1EsxkE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "990182619105-h4rudgehgmallufcisor7hpi5kpk5tcq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
