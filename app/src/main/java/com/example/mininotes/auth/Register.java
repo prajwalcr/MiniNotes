@@ -15,8 +15,10 @@ import android.widget.Toast;
 
 import com.example.mininotes.MainActivity;
 import com.example.mininotes.R;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.EmailAuthProvider;
@@ -72,34 +74,54 @@ public class Register extends AppCompatActivity {
 
                 progressBar.setVisibility(View.VISIBLE);
 
-                AuthCredential credential = EmailAuthProvider.getCredential(uUserEmail, uUserPassword);
-                fAuth.getCurrentUser().linkWithCredential(credential).addOnSuccessListener(new OnSuccessListener<AuthResult>() {
-                    @Override
-                    public void onSuccess(AuthResult authResult) {
-                        Toast.makeText(Register.this, "Notes Are Synced.", Toast.LENGTH_SHORT).show();
-                        progressBar.setVisibility(View.INVISIBLE);
+                if(fAuth.getCurrentUser() != null && fAuth.getCurrentUser().isAnonymous()) {
 
-                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
-                        finish();
+                    AuthCredential credential = EmailAuthProvider.getCredential(uUserEmail, uUserPassword);
+                    fAuth.getCurrentUser().linkWithCredential(credential).addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                        @Override
+                        public void onSuccess(AuthResult authResult) {
+                            Toast.makeText(Register.this, "Notes Are Synced.", Toast.LENGTH_SHORT).show();
+                            progressBar.setVisibility(View.INVISIBLE);
 
-                        FirebaseUser user = fAuth.getCurrentUser();
-                        UserProfileChangeRequest request = new UserProfileChangeRequest.Builder()
-                                .setDisplayName(uUserName)
-                                .build();
-                        user.updateProfile(request);
-                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                            startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                            finish();
 
-                    }
-                }).addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Toast.makeText(Register.this, "Failed To Connect. Try Again.", Toast.LENGTH_SHORT).show();
-                        progressBar.setVisibility(View.INVISIBLE);
-                    }
-                });
+                            FirebaseUser user = fAuth.getCurrentUser();
+                            UserProfileChangeRequest request = new UserProfileChangeRequest.Builder()
+                                    .setDisplayName(uUserName)
+                                    .build();
+                            user.updateProfile(request);
+                            startActivity(new Intent(getApplicationContext(), MainActivity.class));
 
-
-                
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(Register.this, "Failed To Connect. Try Again.", Toast.LENGTH_SHORT).show();
+                            progressBar.setVisibility(View.INVISIBLE);
+                        }
+                    });
+                }
+                else{
+                    fAuth.createUserWithEmailAndPassword(uUserEmail, uUserPassword)
+                            .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                                @Override
+                                public void onComplete(@NonNull Task<AuthResult> task) {
+                                    if(task.isSuccessful()){
+                                        Toast.makeText(Register.this, "New Account Created", Toast.LENGTH_SHORT).show();
+                                        FirebaseUser user = fAuth.getCurrentUser();
+                                        UserProfileChangeRequest request = new UserProfileChangeRequest.Builder()
+                                                .setDisplayName(uUserName)
+                                                .build();
+                                        user.updateProfile(request);
+                                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                                    }
+                                    else{
+                                        Toast.makeText(Register.this, "Authentication Failed "+task.getException(), Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+                }
             }
         });
 

@@ -14,6 +14,10 @@
                 android:id="@+id/sync"
                 android:icon="@drawable/ic_sync_black_24dp"
                 android:title="Sync Notes" />
+            <item
+                android:id="@+id/register"
+                android:icon="@drawable/ic_assignment_ind_black_24dp"
+                android:title="Register"/>
         </menu>
     </item>
 

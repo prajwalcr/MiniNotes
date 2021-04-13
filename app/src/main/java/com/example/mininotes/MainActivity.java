@@ -6,6 +6,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.RecyclerView;
@@ -13,6 +14,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -40,11 +42,14 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +58,7 @@ import java.util.Random;
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     DrawerLayout drawerLayout;
+    ConstraintLayout constraintLayout;
     ActionBarDrawerToggle toggle;
     NavigationView nav_view;
     RecyclerView noteList;
@@ -74,9 +80,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         fAuth = FirebaseAuth.getInstance();
         user = fAuth.getCurrentUser();
 
-        Log.d("lhfsdhfl", "dsfsfs" + user);
-
-        Query query =fStore.collection("notes").document(user.getUid()).collection("myNotes").orderBy("title", Query.Direction.DESCENDING);
+        Query query = fStore.collection("notes").document(user.getUid()).collection("myNotes").orderBy("title", Query.Direction.DESCENDING);
 
         FirestoreRecyclerOptions<Note> allNotes = new FirestoreRecyclerOptions.Builder<Note>()
                 .setQuery(query, Note.class)
@@ -157,6 +161,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
 
         drawerLayout = findViewById(R.id.drawer);
+        constraintLayout = findViewById(R.id.mainLayout);
         nav_view = findViewById(R.id.nav_view);
         noteList = findViewById(R.id.noteList);
 
@@ -194,6 +199,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             }
         });
 
+        if(fAuth.getCurrentUser() != null && fAuth.getCurrentUser().isAnonymous()){
+            final Snackbar snackbar = Snackbar.make(constraintLayout, "Sync Your Account By" +
+                    " Signing In Or Register To Save Your Notes", Snackbar.LENGTH_LONG);
+                    snackbar.setAction("X", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            snackbar.dismiss();
+                        }
+                    });
+            snackbar.setActionTextColor(Color.YELLOW);
+            snackbar.show();
+        }
+
     }
 
     @Override
@@ -202,6 +220,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         drawerLayout.closeDrawer(GravityCompat.START);
 
         switch(menuItem.getItemId()){
+            case R.id.notes:
+                startActivity(new Intent(this, MainActivity.class));
+                break;
+
             case R.id.addNote:
                 startActivity(new Intent(this, AddNote.class));
                 break;
@@ -213,6 +235,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 else{
                     Toast.makeText(this, "You Are Connected.", Toast.LENGTH_SHORT).show();
                 }
+                break;
+
+            case R.id.register:
+                startActivity(new Intent(this, Register.class));
                 break;
 
             case R.id.logout:
@@ -250,6 +276,23 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         // Delete all notes created by anonymous user and delete anonymous user
+
+                        fStore.collection("notes").document(user.getUid()).collection("myNotes")
+                                .get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                            @Override
+                            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                for(QueryDocumentSnapshot documentSnapshot: queryDocumentSnapshots){
+                                    fStore.collection("notes").document(user.getUid()).collection("myNotes")
+                                            .document(documentSnapshot.getId()).delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                        @Override
+                                        public void onSuccess(Void aVoid) {
+                                            Toast.makeText(MainActivity.this, "All Temp Notes are Deleted.", Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                }
+                            }
+                        });
+
                         user.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
                             @Override
                             public void onSuccess(Void aVoid) {

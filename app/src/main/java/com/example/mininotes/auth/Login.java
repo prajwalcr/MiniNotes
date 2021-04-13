@@ -41,7 +41,7 @@ import java.util.Map;
 public class Login extends AppCompatActivity {
     EditText lEmail,lPassword;
     Button loginNow;
-    TextView forgetPass,createAcc;
+    TextView forgotPass,createAcc;
     FirebaseAuth fAuth;
     FirebaseFirestore fStore;
     FirebaseUser user;
@@ -54,7 +54,7 @@ public class Login extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle("Login to FireNotes");
+        getSupportActionBar().setTitle("Login to MiniNotes");
 
         lEmail = findViewById(R.id.email);
         lPassword = findViewById(R.id.lPassword);
@@ -62,7 +62,7 @@ public class Login extends AppCompatActivity {
 
         spinner = findViewById(R.id.progressBar3);
 
-        forgetPass = findViewById(R.id.forgotPasword);
+        forgotPass = findViewById(R.id.forgotPasword);
         createAcc = findViewById(R.id.createAccount);
 
         fAuth = FirebaseAuth.getInstance();
@@ -70,7 +70,7 @@ public class Login extends AppCompatActivity {
         fStore = FirebaseFirestore.getInstance();
 
 
-        showWarning();
+        // showWarning();
 
         loginNow.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -86,10 +86,7 @@ public class Login extends AppCompatActivity {
                     return;
                 }
 
-                // delete notes first
-
                 spinner.setVisibility(View.VISIBLE);
-
 
                 if(fAuth.getCurrentUser() != null && fAuth.getCurrentUser().isAnonymous()){
                     prevUserUID = fAuth.getCurrentUser().getUid();
@@ -104,18 +101,17 @@ public class Login extends AppCompatActivity {
                                 noteMap.put("title", note.getTitle());
                                 noteMap.put("content", note.getContent());
                                 noteList.add(noteMap);
+
+                                fStore.collection("notes").document(user.getUid()).collection("myNotes")
+                                        .document(documentSnapshot.getId()).delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        Toast.makeText(Login.this, "All Temp Notes are Deleted.", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
                             }
                         }
                     });
-
-                    fStore.collection("notes").document(user.getUid()).delete().addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            Toast.makeText(Login.this, "All Temp Notes are Deleted.", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-
-                    // delete Temp user
 
                     user.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
@@ -164,34 +160,34 @@ public class Login extends AppCompatActivity {
                     @Override
                     public void onFailure(@NonNull Exception e) {
 
-                        fAuth.signInAnonymously().addOnSuccessListener(new OnSuccessListener<AuthResult>() {
-                            @Override
-                            public void onSuccess(AuthResult authResult) {
-                                Toast.makeText(Login.this, "Logged in with temporary account", Toast.LENGTH_SHORT).show();
-                                final DocumentReference docRef = fStore.collection("notes").document(fAuth.getCurrentUser().getUid()).collection("myNotes").document();
-                                for(Map note : noteList) {
-                                    docRef.set(note).addOnSuccessListener(new OnSuccessListener<Void>() {
-                                        @Override
-                                        public void onSuccess(Void aVoid) {
+                        if(fAuth.getCurrentUser() == null) {
+                            fAuth.signInAnonymously().addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                                @Override
+                                public void onSuccess(AuthResult authResult) {
+                                    Toast.makeText(Login.this, "Logged in with temporary account", Toast.LENGTH_SHORT).show();
+                                    final DocumentReference docRef = fStore.collection("notes").document(fAuth.getCurrentUser().getUid()).collection("myNotes").document();
+                                    for (Map note : noteList) {
+                                        docRef.set(note).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                            @Override
+                                            public void onSuccess(Void aVoid) {
 
-                                        }
-                                    }).addOnFailureListener(new OnFailureListener() {
-                                        @Override
-                                        public void onFailure(@NonNull Exception e) {
+                                            }
+                                        }).addOnFailureListener(new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
 
-                                        }
-                                    });
+                                            }
+                                        });
+                                    }
+
                                 }
-
-                            }
-                        }).addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(Login.this, "Error" + e.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        });
-
-
+                            }).addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    Toast.makeText(Login.this, "Error" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
 
                         Toast.makeText(Login.this, "Login Failed. " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         spinner.setVisibility(View.INVISIBLE);
@@ -204,6 +200,28 @@ public class Login extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(getApplicationContext(),Register.class));
+            }
+        });
+
+        forgotPass.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(lEmail.getText().toString().isEmpty()){
+                    lEmail.setError("Empty field");
+                }
+                else {
+                    fAuth.sendPasswordResetEmail(lEmail.getText().toString())
+                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    if (task.isSuccessful()) {
+                                        Toast.makeText(Login.this, "Email has been sent with further steps", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        Toast.makeText(Login.this, "Enter a valid Email ID", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+                }
             }
         });
     }
